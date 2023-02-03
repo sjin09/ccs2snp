@@ -6,3 +6,7 @@
 ccs2snp call -i sample.primary_alignments.sorted.bam --ref ref.fasta -o sample.vcf  --region_list ref.target 
 ```
 
+## User Guide
+
+ccs2snp is a basic germline mutation algorithm. ccs2snp leverages the base base accuracy and read length  of Pacific Biosciences (PacBio) CCS reads to call germline SNPs.
+
