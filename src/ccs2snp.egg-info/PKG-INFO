@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: ccs2snp
+Version: 1.0.0
+Author: Sangjin Lee
+Author-email: sl17@sanger.ac.uk
+License: MIT
+Project-URL: homepage, https://github.com/sjin09/ccs2snp
+Project-URL: repository, https://github.com/sjin09/ccs2snp
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+License-File: LICENSE.rst

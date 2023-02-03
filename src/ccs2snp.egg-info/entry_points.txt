@@ -1,0 +1,2 @@
+[console_scripts]
+ccs2snp = ccs2snp.__main__:main
