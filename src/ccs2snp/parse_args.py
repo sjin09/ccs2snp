@@ -100,13 +100,6 @@ def parse_args(program_version, arguments=sys.argv[1:]):
         help="minimum alternative allele depth at single base substitution site",
     )
     parser_call.add_argument(
-        "--min_hap_count",
-        type=int,
-        default=3,
-        required=False,
-        help="minimum h0 and h1 haplotype count",
-    )
-    parser_call.add_argument(
         "--mismatch_window",
         type=int,
         default=20,
