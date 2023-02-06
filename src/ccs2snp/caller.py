@@ -128,7 +128,7 @@ def get_germline_substitutions(
 
         for rpos in range(chunk_start, chunk_end):
             ref = seq[rpos]
-            if ref == "N":
+            if ref not in himut.util.base_set:
                 continue
             allelecounts = rpos2allelecounts[rpos]
             allele2bq_lst = rpos2allele2bq_lst[rpos]
