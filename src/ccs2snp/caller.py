@@ -12,16 +12,6 @@ from collections import defaultdict
 from typing import Dict, List, Tuple
 
 
-class METRICS:
-    num_snp: int = 0
-    num_low_gq_snp: int = 0 
-    num_uncallable_snp: int = 0
-    num_md_filtered_snp: int = 0
-    num_ab_filtered_snp: int = 0
-    num_het_snp: int = 0
-    num_hetalt_snp: int = 0
-    num_homalt_snp: int = 0
-  
 
 def init_allelecounts():
     rpos2allelecounts = defaultdict(lambda: np.zeros(6))
@@ -106,22 +96,20 @@ def get_germline_substitutions(
     chrom2snp_lst: Dict[
         str, List[Tuple[str, int, str, str, int, int, int, int, str]]
     ],
-    chrom2snp_log: Dict[str, List[int]]
-) -> List[Tuple[str, int, str, str, int, int, int, float, float]]:
+):
 
 
     snp_lst = []
-    m = METRICS()
     himut.gtlib.init(germline_snv_prior)
     alignments = pysam.AlignmentFile(bam_file, "rb")
-    for (chrom, chunk_start, chunk_end) in chunkloci_lst: ## TODO
+    for (chrom, chunk_start, chunk_end) in chunkloci_lst: 
         rpos2allelecounts, rpos2allele2bq_lst, = init_allelecounts()
-        for i in alignments.fetch(chrom, chunk_start, chunk_end): # traverse genome
+        for i in alignments.fetch(chrom, chunk_start, chunk_end): # traverse the chromosome in chunks
             ccs = himut.bamlib.BAM(i)
             if not ccs.is_primary:
                 continue
-            # if himut.caller.is_low_mapq(ccs.mapq, min_mapq):
-            #     continue
+            if himut.caller.is_low_mapq(ccs.mapq, min_mapq):
+                continue
             update_allelecounts(
                 ccs, rpos2allelecounts, rpos2allele2bq_lst, 
             )
@@ -136,7 +124,6 @@ def get_germline_substitutions(
             if gt_state == "homref":
                 continue
 
-            m.num_snp += 1
             tpos = rpos + 1
             _del_count, _ins_count, read_depth = himut.bamlib.get_read_depth(allelecounts)
             _, _, ref_count = himut.bamlib.get_ref_counts(ref, read_depth, allelecounts, allele2bq_lst)
@@ -158,7 +145,6 @@ def get_germline_substitutions(
                         alt_vaf,
                     )
                 )
-                m.num_low_gq_snp += 1 
                 continue 
 
             if read_depth > md_threshold:
@@ -178,7 +164,6 @@ def get_germline_substitutions(
                         alt_vaf,
                     )
                 )
-                m.num_md_filtered_snp += 1
                 continue
             if gt_state == "het" and not (ref_count >= min_ref_count and alt_count >= min_alt_count):
                 snp_lst.append(
@@ -197,7 +182,6 @@ def get_germline_substitutions(
                         alt_vaf,
                     )
                 )
-                m.num_ab_filtered_snp += 1
                 continue
 
             counter = 0
@@ -233,13 +217,6 @@ def get_germline_substitutions(
                 )
                 continue
             
-            if gt_state == "het":
-                m.num_het_snp += 1
-            elif gt_state == "hetalt":
-                m.num_hetalt_snp += 1
-            elif gt_state == "homalt":
-                m.num_homalt_snp += 1
-
             snp_lst.append(
                     (
                         chrom,
@@ -258,16 +235,6 @@ def get_germline_substitutions(
                 )
  
     chrom2snp_lst[chrom] = snp_lst
-    chrom2snp_log[chrom] = [
-        m.num_snp,
-        m.num_low_gq_snp,
-        m.num_uncallable_snp,
-        m.num_md_filtered_snp,
-        m.num_ab_filtered_snp,
-        m.num_het_snp,
-        m.num_hetalt_snp,
-        m.num_homalt_snp,
-    ]
     alignments.close()
 
 
@@ -291,24 +258,25 @@ def call_germline_snps(
 ) -> None:
 
     cpu_start = time.time() / 60
-    refseq = pyfastx.Fasta(ref_file)
+    ccs2snp.util.is_input_exist(
+        bam_file,
+        ref_file,
+        out_file,
+    )
     _, tname2tsize = himut.bamlib.get_tname2tsize(bam_file)
     chrom_lst, chrom2chunkloci_lst = himut.util.load_loci(region, region_list, tname2tsize)
     _, _, md_threshold = himut.bamlib.get_thresholds(bam_file, chrom_lst, tname2tsize)
-    # himut.util.check_caller_input_exists(
-    #     bam_file,
-    #     chrom_lst,
-    #     tname2tsize,
-    #     phase,
-    #     phased_vcf_file,
-    #     out_file,
-    # )
+    ccs2snp.util.is_input_corrupt(
+        bam_file,
+        ref_file,
+        chrom_lst,
+    )
 
     print("ccs2snp is calling substitutions with {} threads".format(threads))
     p = mp.Pool(threads)
     manager = mp.Manager()
     chrom2snp_lst = manager.dict()
-    chrom2snp_log = manager.dict()
+    refseq = pyfastx.Fasta(ref_file)
     get_germline_substitutions_arg_lst = [
         (
             chrom,
@@ -326,7 +294,6 @@ def call_germline_snps(
             germline_snv_prior,
             germline_indel_prior,
             chrom2snp_lst,
-            chrom2snp_log
         )
         for chrom in chrom_lst
     ]
@@ -357,11 +324,10 @@ def call_germline_snps(
         version,
         out_file,
     )
-    ccs2snp.vcflib.dump_snp_log(chrom_lst, chrom2snp_log)
     ccs2snp.vcflib.dump_snp(out_file, vcf_header, chrom_lst, chrom2snp_lst)
 
     print(
-        "ccs2snp finished calling and returning substitutions with {} threads".format(
+        "ccs2snp finished calling and returning germline SNPs with {} threads".format(
             threads
         )
     )

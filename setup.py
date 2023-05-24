@@ -3,7 +3,7 @@
 from setuptools import setup
 setup(
         name="ccs2snp", 
-        version='1.0.0',
+        version='0.0.1',
         project_urls={
             "homepage": "https://github.com/sjin09/ccs2snp",
             "repository": "https://github.com/sjin09/ccs2snp"

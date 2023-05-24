@@ -4,11 +4,11 @@ from typing import Dict, List, Tuple
 gt_lst = ["AA", "TA", "CA", "GA", "TT", "CT", "GT", "CC", "GC", "GG"]
 
 
-
 def get_argmin_gt(
     gt_pl_lst: List[float],
     gt2gt_state: Dict[str, str]
 ):
+
     ilst = np.argsort(gt_pl_lst)
     gt = [gt_lst[i] for i in ilst][0]
     gt_pl_lst = [gt_pl_lst[i] for i in ilst]
